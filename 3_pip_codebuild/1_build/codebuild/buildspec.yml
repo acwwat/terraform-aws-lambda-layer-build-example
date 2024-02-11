@@ -1,0 +1,21 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.11
+  build:
+    commands:
+      - mkdir python
+      - cd python
+      - |
+        cat <<'EOF' > requirements.txt
+        numpy
+        EOF
+      - pip install --platform=manylinux_2_17_x86_64 --only-binary=":all:" -r requirements.txt -t .
+      - cd ..
+      - zip -r9 $LAYER_NAME.zip python
+  post_build:
+    commands:
+      - test "$CODEBUILD_BUILD_SUCCEEDING" = "1"
+      - aws lambda publish-layer-version --layer-name $LAYER_NAME --description "Example Lambda layer" --compatible-runtimes python3.11 --zip-file fileb://${LAYER_NAME}.zip
